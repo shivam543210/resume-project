@@ -2,7 +2,7 @@ import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
 import { asyncHandler } from "../utilities/asyncHandler.utility.js";
 import { errorHandler } from "../utilities/errorHandler.utility.js";
-import {getSocketId, io} from '../socket/socket.js'
+import {getSocketIds, io} from '../socket/socket.js'
 import redisClient from "../config/redis.js";
 import { localMessageQueue } from "../queue/messageLocalQueue.js";
 
@@ -49,9 +49,11 @@ export const sendMessage = asyncHandler(async (req, res, next) => {
 localMessageQueue.push(newMessage);
   //Emit socket event
 
-  const socketId = getSocketId(receiverId);
-  if (socketId) {
-    io.to(socketId).emit('newMessage', newMessage);
+  const socketIds = getSocketIds(receiverId);
+  if (socketIds && socketIds.length > 0) {
+    socketIds.forEach(socketId => {
+      io.to(socketId).emit('newMessage', newMessage);
+    });
   }
     res.status(201).json({
     success: true,
